@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Відвідувачі спорткомплексу</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Відвідувачі спорткомплексу</h1>
+
+    <h2>Додати нового відвідувача</h2>
+    <form id="addVisitorForm">
+        <div class="form-group">
+            <label for="firstName">Ім'я:</label>
+            <input type="text" class="form-control" id="firstName" name="first_name" required>
+        </div>
+        <div class="form-group">
+            <label for="lastName">Прізвище:</label>
+            <input type="text" class="form-control" id="lastName" name="last_name" required>
+        </div>
+        <div class="form-group">
+            <label for="dateOfBirth">Дата народження:</label>
+            <input type="date" class="form-control" id="dateOfBirth" name="date_of_birth" required>
+        </div>
+        <div class="form-group">
+            <label for="membershipType">Тип членства:</label>
+            <input type="text" class="form-control" id="membershipType" name="membership_type" required>
+        </div>
+        <div class="form-group">
+            <label for="registrationDate">Дата реєстрації:</label>
+            <input type="date" class="form-control" id="registrationDate" name="registration_date" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Електронна пошта:</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="isActive">Активний:</label>
+            <select class="form-control" id="isActive" name="is_active">
+                <option value="true">Так</option>
+                <option value="false">Ні</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Додати відвідувача</button>
+    </form>
+
+    <h2>Список відвідувачів</h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Ім'я</th>
+            <th>Прізвище</th>
+            <th>Дата народження</th>
+            <th>Тип членства</th>
+            <th>Дата реєстрації</th>
+            <th>Активний</th>
+            <th>Електронна пошта</th>
+            <th>Дії</th>
+        </tr>
+        </thead>
+        <tbody id="visitorTableBody">
+        <!-- Тут будуть завантажені дані про відвідувачів -->
+        </tbody>
+    </table>
+
+    <!-- Редагувати відвідувача -->
+    <div class="modal fade" id="editVisitorModal" tabindex="-1" role="dialog" aria-labelledby="editVisitorModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editVisitorModalLabel">Редагувати відвідувача</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editVisitorForm">
+                        <input type="hidden" id="editVisitorId" name="id">
+                        <div class="form-group">
+                            <label for="editFirstName">Ім'я:</label>
+                            <input type="text" class="form-control" id="editFirstName" name="first_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editLastName">Прізвище:</label>
+                            <input type="text" class="form-control" id="editLastName" name="last_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDateOfBirth">Дата народження:</label>
+                            <input type="date" class="form-control" id="editDateOfBirth" name="date_of_birth" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editMembershipType">Тип членства:</label>
+                            <input type="text" class="form-control" id="editMembershipType" name="membership_type"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editRegistrationDate">Дата реєстрації:</label>
+                            <input type="date" class="form-control" id="editRegistrationDate" name="registration_date"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editEmail">Електронна пошта:</label>
+                            <input type="email" class="form-control" id="editEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editIsActive">Активний:</label>
+                            <select class="form-control" id="editIsActive" name="is_active">
+                                <option value="true">Так</option>
+                                <option value="false">Ні</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрити</button>
+                    <button type="button" class="btn btn-primary" id="saveChanges">Зберегти зміни</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Load Visitors
+        function loadVisitors() {
+            $.ajax({
+                url: "/visitors/",
+                type: "GET",
+                success: function(data) {
+                    var rows = "";
+                    $.each(data, function(index, visitor) {
+                        rows += `
+                            <tr>
+                                <td>${visitor.id}</td>
+                                <td>${visitor.first_name}</td>
+                                <td>${visitor.last_name}</td>
+                                <td>${visitor.date_of_birth}</td>
+                                <td>${visitor.membership_type}</td>
+                                <td>${visitor.registration_date}</td>
+                                <td>${visitor.is_active}</td>
+                                <td>${visitor.email}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary edit-visitor" data-id="${visitor.id}" data-toggle="modal" data-target="#editVisitorModal">Редагувати</button>
+                                    <button class="btn btn-sm btn-danger delete-visitor" data-id="${visitor.id}">Видалити</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $("#visitorTableBody").html(rows);
+                }
+            });
+        }
+
+        loadVisitors();
+
+        // Додати відвідувача
+        $("#addVisitorForm").submit(function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: "/visitors/",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    first_name: $("#firstName").val(),
+                    last_name: $("#lastName").val(),
+                    date_of_birth: $("#dateOfBirth").val(),
+                    membership_type: $("#membershipType").val(),
+                    registration_date: $("#registrationDate").val(),
+                    is_active: $("#isActive").val() === "true",
+                    email: $("#email").val()
+                }),
+                success: function() {
+                    loadVisitors();
+                    $("#addVisitorForm")[0].reset();
+                }
+            });
+        });
+
+        // Видалити відвідувача
+        $(document).on("click", ".delete-visitor", function() {
+            var id = $(this).data("id");
+            $.ajax({
+                url: "/visitors/" + id,
+                type: "DELETE",
+                success: function() {
+                    loadVisitors();
+                }
+            });
+        });
+
+        // Редагувати відвідувача
+        $(document).on("click", ".edit-visitor", function() {
+            var id = $(this).data("id");
+            $.ajax({
+                url: "/visitors/" + id,
+                type: "GET",
+                success: function(visitor) {
+                    $("#editVisitorId").val(visitor.id);
+                    $("#editFirstName").val(visitor.first_name);
+                    $("#editLastName").val(visitor.last_name);
+                    $("#editDateOfBirth").val(visitor.date_of_birth);
+                    $("#editMembershipType").val(visitor.membership_type);
+                    $("#editRegistrationDate").val(visitor.registration_date);
+                    $("#editEmail").val(visitor.email);
+                    $("#editIsActive").val(visitor.is_active.toString()); // Convert boolean to string for select
+                }
+            });
+        });
+
+        // Зберегти
+        $("#saveChanges").click(function() {
+            var id = $("#editVisitorId").val();
+            $.ajax({
+                url: "/visitors/" + id,
+                type: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    first_name: $("#editFirstName").val(),
+                    last_name: $("#editLastName").val(),
+                    date_of_birth: $("#editDateOfBirth").val(),
+                    membership_type: $("#editMembershipType").val(),
+                    registration_date: $("#editRegistrationDate").val(),
+                    is_active: $("#editIsActive").val() === "true",
+                    email: $("#editEmail").val()
+
+                }),
+                success: function() {
+                    $("#editVisitorModal").modal("hide");
+                    loadVisitors();
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
